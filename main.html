@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head><title>Aviator Predictor 5zcq7q</title></head>
+<body style="font-family:monospace;background:#000;color:#0f0;padding:20px">
+<h1>🎯 AVIATOR 5ZCQ7Q LIVE PREDICTOR</h1>
+<div id="pred">LOADING...</div>
+
+<script>
+const SERVER_SEED = "f59bd29b5a1be76913269814592202452";
+const BASE_ROUND = 11967391;
+
+function predict(round) {
+    const enc = new TextEncoder();
+    const key = enc.encode(SERVER_SEED);
+    const msg = enc.encode(`client_seed_1:${round}`);
+    
+    const hmac = await crypto.subtle.importKey('raw', key, {name: 'HMAC', hash: 'SHA-512'}, false, ['sign']);
+    const signature = await crypto.subtle.sign('HMAC', hmac, msg);
+    const hash = new Uint8Array(signature.slice(0,4));
+    const uint32 = (hash[0] | (hash[1] << 8) | (hash[2] << 16) | (hash[3] << 24)) >>> 0;
+    const crash = (1 / (Math.pow(2,32) / (uint32 + 1))).toFixed(2);
+    
+    return {round, crash: `${crash}x`, safe: `${Math.min(crash*0.85,1.5).toFixed(2)}x`, status: crash>2?'🟢SAFE':crash>1.2?'🟡RISK':'🔴CRASH'};
+}
+
+// Live ticker
+let currentRound = BASE_ROUND + 1;
+setInterval(async () => {
+    const pred = await predict(currentRound);
+    document.getElementById('pred').innerHTML = `
+        <h2>Round #${pred.round.toString().padStart(8,'0')}</h2>
+        <h1>${pred.crash}</h1>
+        <p>Safe: ${pred.safe} | ${pred.status}</p>
+        <small>Server: ${SERVER_SEED.slice(0,16)}...</small>
+    `;
+    currentRound++;
+}, 1000);
+</script>
+</body>
+</html>
